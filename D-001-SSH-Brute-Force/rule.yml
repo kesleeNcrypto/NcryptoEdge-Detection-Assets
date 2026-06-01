@@ -1,0 +1,61 @@
+title: SSH Brute Force Attack
+id: d001-ncryptoedge-ssh-brute-force
+status: production
+description: Detects repeated SSH authentication failures from a single source IP,
+  indicating a brute force attempt against an SSH service.
+author: Esla Kwanza — NCryptoEdge
+date: 2026-06-01
+asset_id: D-001
+references:
+  - https://attack.mitre.org/techniques/T1110/001/
+  - https://documentation.wazuh.com/current/user-manual/ruleset/rules-classification.html
+tags:
+  - attack.credential_access
+  - attack.t1110.001
+logsource:
+  product: linux
+  service: auth
+detection:
+  selection:
+    data.program: sshd
+    data.srcip|exists: true
+  keywords:
+    - "Failed password"
+    - "Invalid user"
+    - "authentication failure"
+  condition: selection and keywords
+  timeframe: 60s
+  threshold:
+    field: data.srcip
+    count: 5
+falsepositives:
+  - Misconfigured automation or monitoring scripts using SSH
+  - Legitimate users who have forgotten their password
+  - Penetration testing activity (coordinate with client before testing)
+  - Jump servers or bastion hosts with high legitimate auth volume
+level: medium
+fields:
+  - data.srcip
+  - data.dstuser
+  - data.timestamp
+  - agent.name
+
+# ─────────────────────────────────────────────
+# WAZUH EQUIVALENT
+# ─────────────────────────────────────────────
+# Wazuh has built-in SSH brute force detection via rule ID 5720 (sshd) and
+# rule group 5763 (authentication_failures). The rule below is a custom
+# enhancement that aligns with NCryptoEdge thresholds.
+#
+# Add to /var/ossec/etc/rules/ncryptoedge_rules.xml:
+#
+# <rule id="100001" level="10" frequency="5" timeframe="60">
+#   <if_matched_sid>5716</if_matched_sid>
+#   <same_source_ip />
+#   <description>NCryptoEdge D-001: SSH brute force — 5+ failures in 60s from same IP</description>
+#   <group>authentication_failures,ncryptoedge,d-001</group>
+# </rule>
+#
+# Tune frequency and timeframe per client environment.
+# Lower volume SME environments may warrant frequency="3" timeframe="120"
+# ─────────────────────────────────────────────
