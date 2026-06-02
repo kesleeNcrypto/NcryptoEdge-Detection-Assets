@@ -1,0 +1,55 @@
+title: Outbound Port Scan
+id: d005-ncryptoedge-outbound-port-scan
+status: production
+description: Detects outbound port scanning activity from a monitored host using
+  Suricata telemetry and network alerting.
+author: Esla Kwanza — NCryptoEdge
+date: 2026-06-01
+asset_id: D-005
+references:
+  - https://attack.mitre.org/techniques/T1046/
+  - https://suricata.io/
+  - https://documentation.wazuh.com/current/user-manual/ruleset/rules-classification.html
+tags:
+  - attack.discovery
+  - attack.t1046
+  - attack.network_scan
+  - detection.suricata
+logsource:
+  product: suricata
+  service: eve
+detection:
+  selection:
+    event_type: alert
+    signature.category: "Attempted Information Leak"
+    signature.sig_name|contains:
+      - "ET SCAN"
+      - "SCANTCP"
+      - "SCAN"
+  condition: selection
+timeframe: 180s
+falsepositives:
+  - authorised network scanning or vulnerability assessment
+  - legitimate asset discovery tools used by IT/security teams
+  - transient port sweeps from dynamic scanning infrastructure
+level: medium
+fields:
+  - src_ip
+  - src_port
+  - dest_ip
+  - dest_port
+  - signature.sig_name
+
+# ─────────────────────────────────────────────
+# WAZUH EQUIVALENT
+# ─────────────────────────────────────────────
+# Add to /var/ossec/etc/rules/ncryptoedge_rules.xml:
+#
+# <rule id="100005" level="8">
+#   <if_sid>18111</if_sid>
+#   <description>NCryptoEdge D-005: Outbound port scan detected by Suricata</description>
+#   <group>network_scan,ncryptoedge,d-005</group>
+# </rule>
+#
+# Review alerts from authorised scanning systems to reduce false positives.
+# ─────────────────────────────────────────────

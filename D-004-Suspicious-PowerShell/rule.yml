@@ -1,0 +1,56 @@
+title: Suspicious PowerShell Execution
+id: d004-ncryptoedge-suspicious-powershell
+status: production
+description: Detects suspicious PowerShell process execution on Windows hosts,
+  including encoded commands, download activity, and obfuscated execution patterns.
+author: Esla Kwanza — NCryptoEdge
+date: 2026-06-01
+asset_id: D-004
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+  - https://attack.mitre.org/techniques/T1059/001/
+  - https://documentation.wazuh.com/current/user-manual/ruleset/rules-classification.html
+tags:
+  - attack.execution
+  - attack.t1059.001
+  - attack.powershell
+logsource:
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    EventID: 1
+    Image|endswith: "/powershell.exe"
+    CommandLine|contains:
+      - "EncodedCommand"
+      - "IEX"
+      - "Invoke-Expression"
+      - "DownloadString"
+      - "New-Object System.Net.WebClient"
+  condition: selection
+timeframe: 120s
+falsepositives:
+  - legitimate administrative PowerShell automation
+  - patch management or deployment scripts using PowerShell
+  - security tool scans that invoke PowerShell
+level: high
+fields:
+  - Image
+  - CommandLine
+  - ParentImage
+  - User
+  - agent.name
+
+# ─────────────────────────────────────────────
+# WAZUH EQUIVALENT
+# ─────────────────────────────────────────────
+# Add to /var/ossec/etc/rules/ncryptoedge_rules.xml:
+#
+# <rule id="100004" level="12">
+#   <if_sid>18110</if_sid>
+#   <description>NCryptoEdge D-004: Suspicious PowerShell execution</description>
+#   <group>malicious_activity,ncryptoedge,d-004</group>
+# </rule>
+#
+# Tune suppression for legitimate automation and monitoring tools.
+# ─────────────────────────────────────────────

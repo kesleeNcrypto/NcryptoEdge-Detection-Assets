@@ -1,0 +1,61 @@
+title: RDP Brute Force Attack
+id: d002-ncryptoedge-rdp-brute-force
+status: production
+description: Detects repeated failed RDP authentication attempts from a single source IP, indicating a brute force attack against Windows Remote Desktop.
+author: Esla Kwanza — NCryptoEdge
+date: 2026-06-01
+asset_id: D-002
+references:
+  - https://attack.mitre.org/techniques/T1110/001/
+  - https://learn.microsoft.com/windows/security/threat-protection/auditing/event-4625
+  - https://documentation.wazuh.com/current/user-manual/ruleset/rules-classification.html
+tags:
+  - attack.credential_access
+  - attack.t1110.001
+  - attack.bruteforce
+  - attack.remote_access
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4625
+    IpAddress|exists: true
+    TargetUserName|exists: true
+    FailureReason|contains:
+      - "Unknown user name or bad password"
+      - "user name does not exist"
+  keywords:
+    - "RDP"
+    - "Terminal Services"
+  condition: selection and keywords
+  timeframe: 120s
+  threshold:
+    field: IpAddress
+    count: 5
+falsepositives:
+  - legitimate user lockout or repeated password retries
+  - legitimate automation or remote support tools
+  - scheduled penetration tests or vulnerability scans
+level: medium
+fields:
+  - IpAddress
+  - TargetUserName
+  - WorkstationName
+  - ComputerName
+  - agent.name
+
+# ─────────────────────────────────────────────
+# WAZUH EQUIVALENT
+# ─────────────────────────────────────────────
+# Add to /var/ossec/etc/rules/ncryptoedge_rules.xml:
+#
+# <rule id="100002" level="10" frequency="5" timeframe="120">
+#   <if_matched_sid>18107</if_matched_sid>
+#   <same_source_ip />
+#   <description>NCryptoEdge D-002: RDP brute force — 5+ failed logons in 120s</description>
+#   <group>authentication_failures,ncryptoedge,d-002</group>
+# </rule>
+#
+# Adjust thresholds for high-volume or managed environments.
+# ─────────────────────────────────────────────

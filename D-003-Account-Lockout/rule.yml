@@ -1,0 +1,51 @@
+title: Account Lockout — Credential Attack
+id: d003-ncryptoedge-account-lockout
+status: production
+description: Detects Windows account lockouts that may indicate repeated failed
+  authentication attempts or targeted credential abuse.
+author: Esla Kwanza — NCryptoEdge
+date: 2026-06-01
+asset_id: D-003
+references:
+  - https://attack.mitre.org/techniques/T1110/001/
+  - https://learn.microsoft.com/windows/security/threat-protection/auditing/event-4740
+  - https://documentation.wazuh.com/current/user-manual/ruleset/rules-classification.html
+tags:
+  - attack.credential_access
+  - attack.t1110.001
+  - attack.account_lockout
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4740
+    TargetUserName|exists: true
+    SubjectUserName|exists: true
+  condition: selection
+timeframe: 300s
+falsepositives:
+  - administrative account lockouts after password changes
+  - account lockouts from user mistakes on large environments
+  - account lockouts caused by legacy systems or service account failures
+level: medium
+fields:
+  - TargetUserName
+  - SubjectUserName
+  - IpAddress
+  - ComputerName
+  - agent.name
+
+# ─────────────────────────────────────────────
+# WAZUH EQUIVALENT
+# ─────────────────────────────────────────────
+# Add to /var/ossec/etc/rules/ncryptoedge_rules.xml:
+#
+# <rule id="100003" level="8">
+#   <if_sid>18108</if_sid>
+#   <description>NCryptoEdge D-003: Windows account lockout</description>
+#   <group>authentication_failures,ncryptoedge,d-003</group>
+# </rule>
+#
+# Monitor account lockouts closely in high-volume environments.
+# ─────────────────────────────────────────────
